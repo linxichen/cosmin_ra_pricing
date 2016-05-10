@@ -4,7 +4,7 @@
 %%%% Version 2: Uses separate r and p grids. r grid for ambiguity firm, p
 %%%% grid for menu cost 
 
-function [rmax_sims,pmax_menuc_sims,pflex_sims,bound_hits,a_sims,z_sims,s_sims,w_sims,pjs_sims] = sim_path_gp(init_conds_ex,p0,n0,y0,T_sims,eps_a,eps_s,eps_w,eps_z,params)
+function [y_hist_sims,rmax_sims,pflex_sims,bound_hits,a_sims,z_sims,s_sims,w_sims,pjs_sims] = sim_path_gp(init_conds_ex,p0,n0,y0,T_sims,eps_a,eps_s,eps_w,eps_z,p_agg_sims,params)
 
 %%% Setting parameters
 midQ = params(1);
@@ -59,7 +59,7 @@ s_sims = NaN(T_sims,1);  %%% Money
 a_sims = NaN(T_sims,1);  %%% Aggregate TFP
 w_sims = NaN(T_sims,1);  %%% Idiosyncratic TFP
 
-p_agg_sims = NaN(T_sims,1);  %%% Aggregate price
+% p_agg_sims = NaN(T_sims,1);  %%% Aggregate price
 c_agg_sims = NaN(T_sims,1);  %%% Aggregate quantity
 pjs_sims   = NaN(T_sims,1);  %%%% Industry-level price (last seen) 
 
@@ -99,9 +99,9 @@ y_hist = y_hist_sims(1:length(p0));   %%% Operational history of signals
 n_hist = n_hist_sims(1:length(n0));
 
 %%% Aggregates
-p_agg_sims(t) = log((b/(b-1))*chi*exp(s_sims(t)-a_sims(t) + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));   %%% Aggregate price
+% p_agg_sims(t) = log((b/(b-1))*chi*exp(s_sims(t)-a_sims(t) + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));   %%% Aggregate price
 % c_agg_sims(t) = log(((b-1)/b)*(1/chi)*exp(a_sims(t) - 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));        %%% Aggregate quantity
-c_agg_sims(t) = s_sims(1)/;        %%% Aggregate quantity
+c_agg_sims(t) = s_sims(t)-p_agg_sims(t);        %%% Aggregate quantity
 
 pjs_sims(t) = pjs0;    %%% Industry level price 
 
@@ -138,9 +138,10 @@ for t = 2:T_sims
     n_hist = n_hist_sims(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);
     
     %%% Aggregates
-    p_agg_sims(t) = log((b/(b-1))*chi*exp(s_sims(t)-a_sims(t) + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
-    c_agg_sims(t) = log(((b-1)/b)*(1/chi)*exp(a_sims(t) - 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
-   
+    % p_agg_sims(t) = log((b/(b-1))*chi*exp(s_sims(t)-a_sims(t) + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
+    % c_agg_sims(t) = log(((b-1)/b)*(1/chi)*exp(a_sims(t) - 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
+    c_agg_sims(t) = s_sims(t)-p_agg_sims(t);
+	
     pjs_sims(t)   =  (mod(t,T) == 0)*p_agg_sims(t) + (1 - (mod(t,T) == 0))*pjs_sims(t-1);   %%%%% This line must change
     
     %%% Instead it should be something like (rand < lambda)*(p_agg_sims(t)
@@ -182,6 +183,7 @@ for t = 2:T_sims
 end
 
 
-bound_hits = max([rmax_count,rmin_count,pmax_count_menuc,pmin_count_menuc]);
+% bound_hits = max([rmax_count,rmin_count,pmin_count_menuc]);
+bound_hits = 0;
 
 end

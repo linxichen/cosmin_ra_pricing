@@ -15,6 +15,9 @@ chi = 1; %%% labor preference parameter
 b = 6; %%%% price elasticity of demand
 mu = b/(b-1); %markup for RE firm with full information
 
+ambi_measure = 0.2; % measure of ambiguous firm
+dampen = 0.1; % dampen factor
+
 
 %%%%%%%%%%%%%%%%%%%%% Exogenous shocks
 
@@ -64,8 +67,8 @@ n_y = 3; %%% Std deviation coverage on the grid for demand shocks; Needed for co
 
 %%% Length of simulation
 
-T_sims = 5000;
-num_firms = 10; 
+T_sims = 10;
+num_firms = 500; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%        Simulating a time path         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -103,9 +106,28 @@ eps_z_mat = sigma_z*normrnd(0,1,T_sims,num_firms);
 
 pmax_sims = NaN(T_sims, num_firms); 
 pmax_menuc_sims = NaN(T_sims, num_firms); 
-rmax_sims = NaN(T_sims, num_firms); 
+rmax_sims = NaN(T_sims, num_firms);
+y_hist_sims = NaN(T_sims+1, num_firms);
 
+%% simulate aggreagte process
+s_sims(1) = mu_s + rho_s*mu_s + eps_s(1);
+a_sims(1) = rho_a*a0 + eps_a(1);
+for t = 2:T_sims
+	s_sims(t) = mu_s + rho_s*s_sims(t-1) + eps_s(t);
+	a_sims(t) = rho_a*a_sims(t-1) + eps_a(t);
+end
 
+%% Use flexible aggregate price as initial guess
+p_agg_sims = log((b/(b-1))*chi*exp(s_sims-a_sims + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
+
+diff = 10;
+while diff > 1e-3
+%% Compute flexbible firm price series
+c_agg_sims = s_sims-p_agg_sims;
+Pflex_sims = (b/(b-1))*chi*exp(s_sims-a_sims + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2));
+Yflex_sims = exp(c_agg_sims-b*(log(Pflex_sims)-p_agg_sims));
+
+%% Compute each ambiguous firm's price and demand path 
 tic
 parfor ii = 1:num_firms
     
@@ -113,14 +135,28 @@ parfor ii = 1:num_firms
     eps_z = eps_z_mat(:,ii); 
 
     
-    [rmax_sims_temp,pmax_menuc_sims_temp,pflex_sims_temp,bound_hits,a_sims_temp,z_sims_temp,s_sims_temp,w_sims_temp,pjs_sims_temp] = sim_path_gp(init_conds_ex,p0,n0,y0,T_sims,eps_a,eps_s,eps_w,eps_z,params);
+    [y_hist_sims_temp,rmax_sims_temp,pflex_sims_temp,bound_hits,a_sims_temp,z_sims_temp,s_sims_temp,w_sims_temp,pjs_sims_temp] = sim_path_gp(init_conds_ex,p0,n0,y0,T_sims,eps_a,eps_s,eps_w,eps_z,p_agg_sims,params);
     
     pmax_sims(:,ii) = rmax_sims_temp + pjs_sims_temp; 
-    pmax_menuc_sims(:,ii) = pmax_menuc_sims_temp; 
     rmax_sims(:,ii) = rmax_sims_temp; 
+	y_hist_sims(:,ii) = y_hist_sims_temp;
     
     %bound_hits
 end
 toc
+
+%% Find resulted ambiguous price component
+ambi_price = ambi_measure*mean(exp(pmax_sims+y_hist_sims(2:end,:)),2)./exp(c_agg_sims)';
+flex_price = (1-ambi_measure)*(Pflex_sims.*Yflex_sims./exp(c_agg_sims))';
+p_agg_sims_temp = log(ambi_price+flex_price);
+p_agg_sims_new = dampen*p_agg_sims_temp' + (1-dampen)*p_agg_sims;
+diff = norm(p_agg_sims_new-p_agg_sims,2);
+disp(diff)
+disp(p_agg_sims)
+disp(p_agg_sims_new)
+p_agg_sims = p_agg_sims_new;
+
+end
+
 
 
