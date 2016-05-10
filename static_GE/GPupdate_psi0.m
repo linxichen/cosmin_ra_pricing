@@ -25,6 +25,7 @@ p_l = min(pGrid);
 %%
 data  = sortrows([pObs yObs nObs]); %sorted data for price and quantity
 unique_p  = unique(data(:,1));     %%%% Collect the unique prices in your memory
+unique_p = unique_p(not(isnan(unique_p)));
 data_unique = NaN(length(unique_p),3);
 
 %%% Creates a condensed data matrix -- with rows for unique prices only 

@@ -2,9 +2,9 @@
 %%%% Simulates a time-series of prices for ambiguity, flexible and menu
 %%%% cost firms.
 %%%% Version 2: Uses separate r and p grids. r grid for ambiguity firm, p
-%%%% grid for menu cost
+%%%% grid for menu cost 
 
-function [y_hist_sims,rmax_sims,pflex_sims,bound_hits,a_sims,z_sims,s_sims,w_sims,pjs_sims] = sim_path_gp(init_conds_ex,p0,n0,y0,T_sims,eps_a,eps_s,eps_w,eps_z,p_agg_sims,params)
+function [y_hist_sims,rmax_sims,pflex_sims,bound_hits,a_sims,z_sims,s_sims,w_sims,pjs_sims] = sim_path_gp_entry(init_conds_ex,p0,n0,y0,T_sims,eps_a,eps_s,eps_w,eps_z,p_agg_sims,params)
 
 %%% Setting parameters
 midQ = params(1);
@@ -31,7 +31,7 @@ pjs0        = params(21);
 T           = params(22);
 psi         = params(23);
 sigma_x     = params(24);
-phi_crit    = params(25);
+phi_crit    = params(25); 
 
 %%%% Initial conditions
 s0 = init_conds_ex(1);
@@ -41,7 +41,7 @@ w0 = init_conds_ex(3);
 sigma_w = sqrt(sigma_eps_w^2/(1-rho_w^2));
 
 
-%%%%% Set price grid
+%%%%% Set price grid 
 rlower_bound_adj = 7;
 rupper_bound_adj = 7;
 
@@ -54,14 +54,14 @@ r = sort([r_grid,(p0-pjs0)']);
 r_step = r(2) - r(1);
 r_step_crit = 2;
 
-%%%% Exogenous states
-s_sims = NaN(T_sims,1);  %%% Money
+%%%% Exogenous states  
+s_sims = NaN(T_sims,1);  %%% Money 
 a_sims = NaN(T_sims,1);  %%% Aggregate TFP
 w_sims = NaN(T_sims,1);  %%% Idiosyncratic TFP
 
 % p_agg_sims = NaN(T_sims,1);  %%% Aggregate price
 c_agg_sims = NaN(T_sims,1);  %%% Aggregate quantity
-pjs_sims   = NaN(T_sims,1);  %%%% Industry-level price (last seen)
+pjs_sims   = NaN(T_sims,1);  %%%% Industry-level price (last seen) 
 
 %%%% Define some holding variables for optimal stuff (optimized profits,
 %%%% optimal prices etc. ...)
@@ -72,7 +72,7 @@ rmax_ind_sims = NaN(T_sims,1);  %%% Grid index of the optimal price choice
 pflex_sims = NaN(T_sims,1);    %%% Time series of optimal flexible price
 
 r_hist_sims = NaN(T_sims + length(p0),1);   %%% History of prices the firm has seen
-y_hist_sims = NaN(T_sims + length(p0),1);   %%% History of quantity signals
+y_hist_sims = NaN(T_sims + length(p0),1);   %%% History of quantity signals 
 n_hist_sims = NaN(T_sims + length(p0),1);   %%% History of number of observations
 
 r_hist_sims(1:length(p0)) = p0 - pjs0;    %%% Initial price history
@@ -88,22 +88,22 @@ rmax_count = 0;
 %%% First loop iteration
 t=1;
 
-%%%% Exogenous state variables
-z_sims  = eps_z;
+%%%% Exogenous state variables 
+z_sims  = eps_z; 
 s_sims(1) = mu_s + rho_s*s0 + eps_s(1);
 a_sims(1) = rho_a*a0 + eps_a(1);
 w_sims(1) = rho_w*w0 + eps_w(1);
 
-r_hist = r_hist_sims(1:length(p0));   %%% Operational history
+r_hist = r_hist_sims(1:length(p0));   %%% Operational history 
 y_hist = y_hist_sims(1:length(p0));   %%% Operational history of signals
 n_hist = n_hist_sims(1:length(n0));
 
 %%% Aggregates
 % p_agg_sims(t) = log((b/(b-1))*chi*exp(s_sims(t)-a_sims(t) + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));   %%% Aggregate price
 % c_agg_sims(t) = log(((b-1)/b)*(1/chi)*exp(a_sims(t) - 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));        %%% Aggregate quantity
-c_agg_sims(t) = s_sims(t)-p_agg_sims(t);        %%% Aggregate quantity
+c_agg_sims(t) = s_sims(t)/p_agg_sims(t);        %%% Aggregate quantity
 
-pjs_sims(t) = pjs0;    %%% Industry level price
+pjs_sims(t) = pjs0;    %%% Industry level price 
 
 %%% Worst-Case Demand Expectation
 
@@ -123,7 +123,7 @@ rmax_sims(t) = r(rmax_ind_iter);  %%% Optimal price
 
 r_hist_sims(length(p0) + t) = rmax_sims(t);
 y_hist_sims(length(p0) + t) = midQ - b*rmax_sims(t)+ z_sims(t);    %%% Actual realization of demand (under true DGP)
-n_hist_sims(1: length(p0) + t-1) = n_hist_sims(1: length(p0) + t-1)*(1-phi);   %%% phi is discount rate. Right now = 0
+n_hist_sims(1: length(p0) + t-1) = n_hist_sims(1: length(p0) + t-1)*(1-phi);   %%% phi is discount rate. Right now = 0 
 n_hist_sims(length(p0) + t) = (1-phi);
 
 padj_ind = 0;
@@ -133,31 +133,15 @@ for t = 2:T_sims
     a_sims(t) = rho_a*a_sims(t-1) + eps_a(t);
     w_sims(t) = rho_w*w_sims(t-1) + eps_w(t);
     
-    r_hist = r_hist_sims(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);   %%% Pick out last 200 periods
+    r_hist = r_hist_sims(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);   %%% Pick out last 200 periods 
     y_hist = y_hist_sims(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);
     n_hist = n_hist_sims(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);
-	r_hist = r_hist(not(isnan(r_hist))); % truncate NaN part
-	y_hist = y_hist(not(isnan(y_hist)));
-	n_hist = r_hist(not(isnan(n_hist)));
-    aa = rand(1,1);
-    ddelta = .1;
-    if aa<ddelta
-        r_hist_sims = NaN(T_sims + length(p0),1);   %%% History of prices the firm has seen
-        y_hist_sims = NaN(T_sims + length(p0),1);   %%% History of quantity signals
-        n_hist_sims = NaN(T_sims + length(p0),1);   %%% History of number of observations
-        
-        r_hist_sims(t-length(p0):t) = p0 - pjs0;    %%% Initial price history
-        y_hist_sims(t-length(y0):t) = y0;           %%% Value of initial signals
-        n_hist_sims(t-length(n0):t) = n0;
-        r_hist = r_hist_sims(t-length(p0):t);   %%% Operational history
-        y_hist = y_hist_sims(t-length(y0):t);   %%% Operational history of signals
-        n_hist = n_hist_sims(t-length(n0):t);
-    end
+    
     %%% Aggregates
     % p_agg_sims(t) = log((b/(b-1))*chi*exp(s_sims(t)-a_sims(t) + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
     % c_agg_sims(t) = log(((b-1)/b)*(1/chi)*exp(a_sims(t) - 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
     c_agg_sims(t) = s_sims(t)-p_agg_sims(t);
-    
+	
     pjs_sims(t)   =  (mod(t,T) == 0)*p_agg_sims(t) + (1 - (mod(t,T) == 0))*pjs_sims(t-1);   %%%%% This line must change
     
     %%% Instead it should be something like (rand < lambda)*(p_agg_sims(t)
@@ -165,13 +149,13 @@ for t = 2:T_sims
     %%% note
     
     
-    %%% Next few lines re-center grids every once in a while
+    %%% Next few lines re-center grids every once in a while 
     p_star = log(mu*chi) + (s_sims(t)-a_sims(t)- w_sims(t));
     
     if  (min(abs(p_star - (r(1) + pjs_sims(t))),abs(p_star - (r(end) + pjs_sims(t)))) < r_step_crit*temp) && (mod(t,T) == 0)
         r_grid = linspace( min([p_star - pjs_sims(t) - rlower_bound_adj*temp;r_hist]), ...
             max([p_star - pjs_sims(t) + rupper_bound_adj*temp;r_hist]), r_nodes-1);
-        
+
         r = sort([r_grid,r_hist']);
         padj_ind = padj_ind +1;
     end
@@ -181,7 +165,7 @@ for t = 2:T_sims
     
     %%% Ambiguity averse firm's problem
     g = ((exp(r + pjs_sims(t))/exp(p_agg_sims(t)))-chi*exp(s_sims(t))/(exp(p_agg_sims(t) + a_sims(t) + w_sims(t)))).*exp(0.5*(sigma_z^2 + sigmaxsqr_hat) + b*(p_agg_sims(t) - pjs_sims(t)) + c_agg_sims(t) + qDemand); %%% Calculates the profit function at each point in the price grid.
-    
+
     [g_max_iter, rmax_ind_iter] = max(g);
     
     rmin_count = rmin_count + (rmax_ind_iter == 1);
