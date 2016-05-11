@@ -23,6 +23,9 @@ p_l = min(pGrid);
 [n3,k3] = size(nObs);
 
 %%
+pObs = pObs(not(isnan(pObs)));
+yObs = yObs(not(isnan(yObs)));
+nObs = nObs(not(isnan(nObs)));
 data  = sortrows([pObs yObs nObs]); %sorted data for price and quantity
 unique_p  = unique(data(:,1));     %%%% Collect the unique prices in your memory
 unique_p = unique_p(not(isnan(unique_p)));

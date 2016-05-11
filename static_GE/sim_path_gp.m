@@ -71,13 +71,14 @@ rmax_ind_sims = NaN(T_sims,1);  %%% Grid index of the optimal price choice
 
 pflex_sims = NaN(T_sims,1);    %%% Time series of optimal flexible price
 
-r_hist_sims = NaN(T_sims + length(p0),1);   %%% History of prices the firm has seen
-y_hist_sims = NaN(T_sims + length(p0),1);   %%% History of quantity signals
-n_hist_sims = NaN(T_sims + length(p0),1);   %%% History of number of observations
+r_hist_sims0 = NaN(T_sims + length(p0),1);   %%% History of prices the firm has seen
+y_hist_sims0 = NaN(T_sims + length(p0),1);   %%% History of quantity signals
+n_hist_sims0 = NaN(T_sims + length(p0),1);   %%% History of number of observations
 
-r_hist_sims(1:length(p0)) = p0 - pjs0;    %%% Initial price history
-y_hist_sims(1:length(y0)) = y0;           %%% Value of initial signals
-n_hist_sims(1:length(n0)) = n0;
+r_hist_sims0(1:length(p0)) = p0 - pjs0;    %%% Initial price history
+y_hist_sims0(1:length(y0)) = y0;           %%% Value of initial signals
+n_hist_sims0(1:length(n0)) = n0;
+
 
 %%% Helper variables that count how many times you hit the price grid
 %%% boundary
@@ -94,9 +95,9 @@ s_sims(1) = mu_s + rho_s*s0 + eps_s(1);
 a_sims(1) = rho_a*a0 + eps_a(1);
 w_sims(1) = rho_w*w0 + eps_w(1);
 
-r_hist = r_hist_sims(1:length(p0));   %%% Operational history
-y_hist = y_hist_sims(1:length(p0));   %%% Operational history of signals
-n_hist = n_hist_sims(1:length(n0));
+r_hist = r_hist_sims0(1:length(p0));   %%% Operational history
+y_hist = y_hist_sims0(1:length(p0));   %%% Operational history of signals
+n_hist = n_hist_sims0(1:length(n0));
 
 %%% Aggregates
 % p_agg_sims(t) = log((b/(b-1))*chi*exp(s_sims(t)-a_sims(t) + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));   %%% Aggregate price
@@ -121,11 +122,13 @@ rmax_count = rmax_count + (rmax_ind_iter == length(r));
 gmax_sims(t) = g_max_iter;   %%% Save maximized profits
 rmax_sims(t) = r(rmax_ind_iter);  %%% Optimal price
 
-r_hist_sims(length(p0) + t) = rmax_sims(t);
-y_hist_sims(length(p0) + t) = midQ - b*rmax_sims(t)+ z_sims(t);    %%% Actual realization of demand (under true DGP)
-n_hist_sims(1: length(p0) + t-1) = n_hist_sims(1: length(p0) + t-1)*(1-phi);   %%% phi is discount rate. Right now = 0
-n_hist_sims(length(p0) + t) = (1-phi);
-
+r_hist_sims0(length(p0) + t) = rmax_sims(t);
+y_hist_sims0(length(p0) + t) = midQ - b*rmax_sims(t)+ z_sims(t);    %%% Actual realization of demand (under true DGP)
+n_hist_sims0(1: length(p0) + t-1) = n_hist_sims0(1: length(p0) + t-1)*(1-phi);   %%% phi is discount rate. Right now = 0
+n_hist_sims0(length(p0) + t) = (1-phi);
+r_hist_sims = r_hist_sims0;
+y_hist_sims = y_hist_sims0;
+n_hist_sims = n_hist_sims0;
 padj_ind = 0;
 
 for t = 2:T_sims
@@ -133,25 +136,25 @@ for t = 2:T_sims
     a_sims(t) = rho_a*a_sims(t-1) + eps_a(t);
     w_sims(t) = rho_w*w_sims(t-1) + eps_w(t);
     
-    r_hist = r_hist_sims(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);   %%% Pick out last 200 periods
-    y_hist = y_hist_sims(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);
-    n_hist = n_hist_sims(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);
-	r_hist = r_hist(not(isnan(r_hist))); % truncate NaN part
-	y_hist = y_hist(not(isnan(y_hist)));
-	n_hist = r_hist(not(isnan(n_hist)));
+    r_hist = r_hist_sims0(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);   %%% Pick out last 200 periods
+    y_hist = y_hist_sims0(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);
+    n_hist = n_hist_sims0(max(length(p0) +  t-phi_crit,1):length(p0) + t-1);
+% 	r_hist = r_hist(not(isnan(r_hist))) % truncate NaN part
+% 	y_hist = y_hist(not(isnan(y_hist)))
+% 	n_hist = n_hist(not(isnan(n_hist)))
     aa = rand(1,1);
     ddelta = .1;
     if aa<ddelta
-        r_hist_sims = NaN(T_sims + length(p0),1);   %%% History of prices the firm has seen
-        y_hist_sims = NaN(T_sims + length(p0),1);   %%% History of quantity signals
-        n_hist_sims = NaN(T_sims + length(p0),1);   %%% History of number of observations
+        r_hist_sims0 = NaN(T_sims + length(p0),1);   %%% History of prices the firm has seen
+        y_hist_sims0 = NaN(T_sims + length(p0),1);   %%% History of quantity signals
+        n_hist_sims0 = NaN(T_sims + length(p0),1);   %%% History of number of observations
         
-        r_hist_sims(t-length(p0):t) = p0 - pjs0;    %%% Initial price history
-        y_hist_sims(t-length(y0):t) = y0;           %%% Value of initial signals
-        n_hist_sims(t-length(n0):t) = n0;
-        r_hist = r_hist_sims(t-length(p0):t);   %%% Operational history
-        y_hist = y_hist_sims(t-length(y0):t);   %%% Operational history of signals
-        n_hist = n_hist_sims(t-length(n0):t);
+        r_hist_sims0(t-length(p0):t) = p0 - pjs0;    %%% Initial price history
+        y_hist_sims0(t-length(y0):t) = y0;           %%% Value of initial signals
+        n_hist_sims0(t-length(n0):t) = n0;
+        r_hist = r_hist_sims0(t-length(p0):t);   %%% Operational history
+        y_hist = y_hist_sims0(t-length(y0):t);   %%% Operational history of signals
+        n_hist = n_hist_sims0(t-length(n0):t);
     end
     %%% Aggregates
     % p_agg_sims(t) = log((b/(b-1))*chi*exp(s_sims(t)-a_sims(t) + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
@@ -190,11 +193,14 @@ for t = 2:T_sims
     gmax_sims(t) = g_max_iter;
     rmax_sims(t) = r(rmax_ind_iter);
     
+    r_hist_sims0(length(p0) + t) = rmax_sims(t);
+    y_hist_sims0(length(p0) + t) = midQ - b*rmax_sims(t) + z_sims(t);
+    n_hist_sims0(1: length(p0) + t-1) = n_hist_sims0(1: length(p0) + t-1)*(1-phi);
+    n_hist_sims0(length(p0) + t) = (1-phi);
     r_hist_sims(length(p0) + t) = rmax_sims(t);
     y_hist_sims(length(p0) + t) = midQ - b*rmax_sims(t) + z_sims(t);
-    n_hist_sims(1: length(p0) + t-1) = n_hist_sims(1: length(p0) + t-1)*(1-phi);
+    n_hist_sims(1: length(p0) + t-1) = n_hist_sims0(1: length(p0) + t-1)*(1-phi);
     n_hist_sims(length(p0) + t) = (1-phi);
-    
     t;
 end
 

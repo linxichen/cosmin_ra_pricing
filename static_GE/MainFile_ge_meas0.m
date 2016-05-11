@@ -67,8 +67,8 @@ n_y = 3; %%% Std deviation coverage on the grid for demand shocks; Needed for co
 
 %%% Length of simulation
 
-T_sims = 3;
-num_firms = 100;
+T_sims = 50;
+num_firms = 1000;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%        Simulating a time path         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -143,9 +143,10 @@ while diff > 1e-3
         %bound_hits
     end
     
-    %% Find resulted ambiguous price component
-    ambi_price = ambi_measure*mean(exp(pmax_sims+y_hist_sims),2)./exp(c_agg_sims'); % had a debug here
+    %% Find resulted ambiguous price component 
+    ambi_price = ambi_measure*nanmean(exp(pmax_sims+y_hist_sims),2)./exp(c_agg_sims'); % had a debug here
     flex_price = (1-ambi_measure)*(Pflex_sims.*Yflex_sims./exp(c_agg_sims))';% had a debug here
+    
     p_agg_sims_temp = log(ambi_price+flex_price);
     p_agg_sims_new = dampen*p_agg_sims_temp' + (1-dampen)*p_agg_sims;% had a debug here
     diff = norm(p_agg_sims_new-p_agg_sims,Inf);
