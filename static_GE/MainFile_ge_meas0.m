@@ -67,8 +67,8 @@ n_y = 3; %%% Std deviation coverage on the grid for demand shocks; Needed for co
 
 %%% Length of simulation
 
-T_sims = 10;
-num_firms = 500; 
+T_sims = 3;
+num_firms = 30; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%        Simulating a time path         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -151,9 +151,7 @@ flex_price = (1-ambi_measure)*(Pflex_sims.*Yflex_sims./exp(c_agg_sims))';
 p_agg_sims_temp = log(ambi_price+flex_price);
 p_agg_sims_new = dampen*p_agg_sims_temp' + (1-dampen)*p_agg_sims;
 diff = norm(p_agg_sims_new-p_agg_sims,2);
-disp(diff)
-disp(p_agg_sims)
-disp(p_agg_sims_new)
+disp(diff);
 p_agg_sims = p_agg_sims_new;
 
 end
