@@ -15,7 +15,7 @@ chi = 1; %%% labor preference parameter
 b = 6; %%%% price elasticity of demand
 mu = b/(b-1); %markup for RE firm with full information
 
-ambi_measure = 0.01; % measure of ambiguous firm
+ambi_measure = 0.05; % measure of ambiguous firm
 dampen = 0.1; % dampen factor
 
 
@@ -68,7 +68,7 @@ n_y = 3; %%% Std deviation coverage on the grid for demand shocks; Needed for co
 %%% Length of simulation
 
 T_sims = 3;
-num_firms = 30; 
+num_firms = 100; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%        Simulating a time path         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -121,7 +121,7 @@ end
 p_agg_sims = log((b/(b-1))*chi*exp(s_sims-a_sims + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
 
 diff = 10;
-while diff > 1e-3
+while diff > 1e-10
 %% Compute flexbible firm price series
 c_agg_sims = s_sims-p_agg_sims;
 Pflex_sims = (b/(b-1))*chi*exp(s_sims-a_sims + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2));
@@ -148,16 +148,21 @@ toc
 %% Find resulted ambiguous price component
 ambi_price = ambi_measure*nanmean(exp(pmax_sims+y_hist_sims(2:end,:)),2)./exp(c_agg_sims)';
 flex_price = (1-ambi_measure)*(Pflex_sims.*Yflex_sims./exp(c_agg_sims))';
-Y_agg_sims = ambi_measure*nanmean(exp(y_hist_sims(2:end,:)),2)'+(1-ambi_measure)*Yflex_sims;
+Y_hist_sims = exp(y_hist_sims(2:end,:));
+Yambi_sims = (nanmean(Y_hist_sims.^((b-1)/b),2)).^(b/(b-1));
+Y_agg_sims = ambi_measure*Yambi_sims'+(1-ambi_measure)*Yflex_sims;
 y_agg_sims = log(Y_agg_sims);
-excess_demand = c_agg_sims-y_agg_sims;
+excess_supply = y_agg_sims-c_agg_sims;
 
-p_agg_sims_temp = log(ambi_price+flex_price);
-p_agg_sims_new = dampen*p_agg_sims_temp' + (1-dampen)*p_agg_sims;
+% p_agg_sims_temp = log(ambi_price+flex_price);
+% p_agg_sims_new = dampen*p_agg_sims_temp' + (1-dampen)*p_agg_sims;
+
+step = (abs(excess_supply));
+p_agg_sims_new = (1-sign(excess_supply).*step).*p_agg_sims;
 
 diff = norm(p_agg_sims_new-p_agg_sims,2);
 disp(diff);
-disp(excess_demand);
+disp(excess_supply);
 p_agg_sims = p_agg_sims_new;
 
 end
