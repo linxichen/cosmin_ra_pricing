@@ -15,7 +15,7 @@ chi = 1; %%% labor preference parameter
 b = 6; %%%% price elasticity of demand
 mu = b/(b-1); %markup for RE firm with full information
 
-ambi_measure = 0.2; % measure of ambiguous firm
+ambi_measure = 0.01; % measure of ambiguous firm
 dampen = 0.1; % dampen factor
 
 
@@ -146,12 +146,18 @@ end
 toc
 
 %% Find resulted ambiguous price component
-ambi_price = ambi_measure*mean(exp(pmax_sims+y_hist_sims(2:end,:)),2)./exp(c_agg_sims)';
+ambi_price = ambi_measure*nanmean(exp(pmax_sims+y_hist_sims(2:end,:)),2)./exp(c_agg_sims)';
 flex_price = (1-ambi_measure)*(Pflex_sims.*Yflex_sims./exp(c_agg_sims))';
+Y_agg_sims = ambi_measure*nanmean(exp(y_hist_sims(2:end,:)),2)'+(1-ambi_measure)*Yflex_sims;
+y_agg_sims = log(Y_agg_sims);
+excess_demand = c_agg_sims-y_agg_sims;
+
 p_agg_sims_temp = log(ambi_price+flex_price);
 p_agg_sims_new = dampen*p_agg_sims_temp' + (1-dampen)*p_agg_sims;
+
 diff = norm(p_agg_sims_new-p_agg_sims,2);
 disp(diff);
+disp(excess_demand);
 p_agg_sims = p_agg_sims_new;
 
 end
