@@ -15,7 +15,7 @@ chi = 1; %%% labor preference parameter
 b = 6; %%%% price elasticity of demand
 mu = b/(b-1); %markup for RE firm with full information
 
-ambi_measure = 0.05; % measure of ambiguous firm
+ambi_measure = 0.5; % measure of ambiguous firm
 dampen = 0.1; % dampen factor
 
 
@@ -67,7 +67,7 @@ n_y = 3; %%% Std deviation coverage on the grid for demand shocks; Needed for co
 
 %%% Length of simulation
 
-T_sims = 3;
+T_sims = 200;
 num_firms = 100; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -121,15 +121,16 @@ end
 p_agg_sims = log((b/(b-1))*chi*exp(s_sims-a_sims + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2)));
 
 diff = 10;
-while diff > 1e-10
+while diff > 1e-4
 %% Compute flexbible firm price series
 c_agg_sims = s_sims-p_agg_sims;
-Pflex_sims = (b/(b-1))*chi*exp(s_sims-a_sims + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2));
+% Pflex_sims = (b/(b-1))*chi*exp(s_sims-a_sims + 0.5*(sigma_z^2/(1-b) + (1-b)*sigma_w^2));
+Pflex_sims = (b/(b-1))*chi*exp(s_sims-a_sims); % assume there's no idiosyncratic components for flex firms
 Yflex_sims = exp(c_agg_sims-b*(log(Pflex_sims)-p_agg_sims));
 
-%% Compute each ambiguous firm's price and demand path 
+%% Compute each ambiguous firm's price and output path 
 tic
-parfor ii = 1:num_firms
+for ii = 1:num_firms
     
     eps_w = eps_w_mat(:,ii);
     eps_z = eps_z_mat(:,ii); 
@@ -146,26 +147,29 @@ end
 toc
 
 %% Find resulted ambiguous price component
-ambi_price = ambi_measure*nanmean(exp(pmax_sims+y_hist_sims(2:end,:)),2)./exp(c_agg_sims)';
-flex_price = (1-ambi_measure)*(Pflex_sims.*Yflex_sims./exp(c_agg_sims))';
-Y_hist_sims = exp(y_hist_sims(2:end,:));
-Yambi_sims = (nanmean(Y_hist_sims.^((b-1)/b),2)).^(b/(b-1));
-Y_agg_sims = ambi_measure*Yambi_sims'+(1-ambi_measure)*Yflex_sims;
+ambi_price = ambi_measure*nanmean(exp(pmax_sims+y_hist_sims(2:end,:)),2); % the total expenditure on ambiguous firms
+flex_price = (1-ambi_measure)*(Pflex_sims.*Yflex_sims)'; % the total expenditure on flex firms
+Y_hist_sims = exp(y_hist_sims(2:end,:)); % ambiguous firms' output
+% Yambi_sims = (nanmean(Y_hist_sims.^((b-1)/b),2)).^(b/(b-1));
+Y_agg_sims = (ambi_measure*nanmean((Y_hist_sims').^((b-1)/b))+(1-ambi_measure)*Yflex_sims.^((b-1)/b)).^(b/(b-1)); % aggregate output
 y_agg_sims = log(Y_agg_sims);
-excess_supply = y_agg_sims-c_agg_sims;
-
-% p_agg_sims_temp = log(ambi_price+flex_price);
-% p_agg_sims_new = dampen*p_agg_sims_temp' + (1-dampen)*p_agg_sims;
-
-step = (abs(excess_supply));
-p_agg_sims_new = (1-sign(excess_supply).*step).*p_agg_sims;
+excess_supply = y_agg_sims-c_agg_sims; % this should be 0 in equilibrium
+p_agg_sims_temp = s_sims-y_agg_sims; % use money equation to update the agg price
+% p_agg_sims_temp = log(ambi_price+flex_price)-y_agg_sims'; % log(ambi_price+flex_price) is the total spending implied by the agg price, we now compute a new agg price
+p_agg_sims_new = dampen*p_agg_sims_temp + (1-dampen)*p_agg_sims;
 
 diff = norm(p_agg_sims_new-p_agg_sims,2);
 disp(diff);
-disp(excess_supply);
+%disp(excess_supply);
 p_agg_sims = p_agg_sims_new;
 
 end
-
+amb_price_index = nanmean(exp(pmax_sims+y_hist_sims(2:end,:)),2)./nanmean(exp(y_hist_sims(2:end,:)),2);
+flex_price_index = Pflex_sims;
+plot(p_agg_sims);
+hold on
+plot(amb_price_index,'k');
+plot(flex_price_index,'r');
+plot(s_sims,'y');
 
 
